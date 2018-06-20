@@ -15,22 +15,25 @@ void pspIdStorageLookup(u16 key, u32 offset, void *buf, u32 len);
 
 int main(int argc, char*argv[])
 {
-	int i;
 	int ret;
 	int model;
 //	SceUID f;
 	SceUID uid;
 	SceCtrlData pad;
-    struct RegParam rpar;
-//	unsigned char mac[6];
-	unsigned char text[64];
-    REGHANDLE rhan, rhnd, rhdl;
+	struct RegParam rpar;
+	unsigned char mac[6];
+	REGHANDLE rhan, rhnd, rhdl;
 	unsigned int data, type, size;
-	char device_name[32] = "FakeShock®3";
+	const unsigned char device_name[64] = {
+		0x50, 0x00, 0x4C, 0x00, 0x41, 0x00, 0x59, 0x00, 0x53, 0x00, 0x54, 0x00, 0x41, 0x00, 0x54, 0x00, // P.L.A.Y.S.T.A.T.
+		0x49, 0x00, 0x4F, 0x00, 0x4E, 0x00, 0x28, 0x00, 0x52, 0x00, 0x29, 0x00, 0x33, 0x00, 0x20, 0x00, // I.O.N.(.R.).3. .
+		0x43, 0x00, 0x6F, 0x00, 0x6E, 0x00, 0x74, 0x00, 0x72, 0x00, 0x6F, 0x00, 0x6C, 0x00, 0x6C, 0x00, // C.o.n.t.r.o.l.l.
+		0x65, 0x00, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x08, 0x00, 0x00, // e.r.____?---??--
+	};
 
 	pspDebugScreenInit();
 	pspDebugScreenClear(); // îñîáî íå íóæíî
-	printf(" PSPgo Fake-Pair Tool v0.4 by Yoti\n\n");
+	printf(" PSPgo Fake-Pair Tool v0.5 by Yoti\n\n");
 
 	uid = pspSdkLoadStartModule("kernel.prx", PSP_MEMORY_PARTITION_KERNEL);
 	if (uid < 0)
@@ -47,13 +50,13 @@ int main(int argc, char*argv[])
 		sceKernelDelayThread(3.00*1000*1000);
 		sceKernelExitGame();
 	}
-		
-    memset(&rpar, 0, sizeof(rpar));
-    rpar.regtype = 1;
-    rpar.namelen = strlen("/system");
-    rpar.unk2 = 1;
-    rpar.unk3 = 1;
-    strcpy(rpar.name, "/system");
+
+	memset(&rpar, 0, sizeof(rpar));
+	rpar.regtype = 1;
+	rpar.namelen = strlen("/system");
+	rpar.unk2 = 1;
+	rpar.unk3 = 1;
+	strcpy(rpar.name, "/system");
 
 	ret = sceRegOpenRegistry(&rpar, 2, &rhan);
 	if (ret == 0)
@@ -80,13 +83,13 @@ int main(int argc, char*argv[])
 				data = 1;
 				ret = sceRegSetKeyValue(rhnd, "device_type", &data, size);
 				if (ret == 0)
-					printf("FakeShock(R)3 t-param was written at slot 0\n");
+					printf("DualShock(R)3 t-param was written at slot 0\n");
 				else
 					printf("sceRegSetKeyValue: 0x%08x\n", ret);
 			}
 			else
 				printf("sceRegGetKeyInfo: 0x%08x\n", ret);
-			//
+
 //			ret = sceRegGetKeyInfo(rhnd, "device_name", &rhdl, &type, &size);
 //			if (ret == 0)
 //			{
@@ -104,16 +107,13 @@ int main(int argc, char*argv[])
 //			}
 //			else
 //				printf("sceRegGetKeyInfo: 0x%08x\n", ret);
-			//
+
 			ret = sceRegGetKeyInfo(rhnd, "device_name", &rhdl, &type, &size);
 			if (ret == 0)
 			{
-				memset(&text, 0, sizeof(text));
-				for (i = 0; i < strlen(device_name); i++)
-					text[i*2] = device_name[i];
-				ret = sceRegSetKeyValue(rhnd, "device_name", text, size);
+				ret = sceRegSetKeyValue(rhnd, "device_name", &device_name, 64); // 64 -> size
 				if (ret == 0)
-					printf("FakeShock(R)3 n-param was written at slot 0\n");
+					printf("DualShock(R)3 n-param was written at slot 0\n");
 				else
 					printf("sceRegSetKeyValue: 0x%08x\n", ret);
 			}
@@ -130,10 +130,10 @@ int main(int argc, char*argv[])
 	sceRegFlushRegistry(rhan);
 	sceRegCloseRegistry(rhan);
 
-//	pspIdStorageLookup(0x50, 0x41, &mac, 6);
-//	printf("PSP side is done. Reprogram your DS3 from PC or Android.\n");
-//	printf("BlueTooth MAC of this PSPgo system is %02x:%02x:%02x:%02x:%02x:%02x.\n",
-//			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	pspIdStorageLookup(0x50, 0x41, &mac, 6);
+	printf("PSP side is done. Reprogram your DS3 from PC or Android.\n");
+	printf("BlueTooth MAC of this PSPgo system is %02x:%02x:%02x:%02x:%02x:%02x.\n",
+			mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 	printf("\n Press X to exit...\n");
 	do
